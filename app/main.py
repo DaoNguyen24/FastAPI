@@ -3,25 +3,36 @@ from random import randrange
 from typing import Optional
 from fastapi import FastAPI,Response,status,HTTPException
 from fastapi.params import Body
-from pydantic import BaseModel
+from pydantic import BaseModel,BaseSettings
 import psycopg2
 from psycopg2.extras import RealDictCursor 
 import time
 from passlib.context import CryptContext
 from . import schemas,utils
-from .routers import post,user,auth
+from .routers import post,user,auth,vote
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated = "auto")
+from .config import settings
+from fastapi.middleware.cors import CORSMiddleware
+
 
 app = FastAPI()
 
+#origins = ["https://www.google.com"]
+origins = ["*"] #all domain can use the api
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,#Alow specific domain
+    allow_credentials=True,
+    allow_methods=["*"],#Alow specific http method
+    allow_headers=["*"],
+)
 
 
 
 while True:
     try:
-        connect = psycopg2.connect(host = 'localhost',port = 5433, database = 'fastapi', user = 'postgres', password = 'Nguyen2003', cursor_factory=RealDictCursor)
+        connect = psycopg2.connect(host = settings.host,port = settings.database_port, database = settings.database_name, user = settings.database_username, password = settings.database_password, cursor_factory=RealDictCursor)
         cursor = connect.cursor()
         print("Connect to database was sucessful")
         break
@@ -45,6 +56,7 @@ while True:
     
 app.include_router(post.router)
 app.include_router(auth.router)
+app.include_router(vote.router)
 
 @app.get("/")
 async def root():

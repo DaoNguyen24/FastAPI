@@ -1,7 +1,7 @@
-from fastapi import FastAPI,APIRouter
+from fastapi import APIRouter
 from random import randrange
 from typing import List, Optional
-from fastapi import FastAPI,Response,status,HTTPException,Depends
+from fastapi import Response,status,HTTPException,Depends
 from fastapi.params import Body
 from pydantic import BaseModel
 import psycopg2
@@ -19,7 +19,7 @@ from .. import main
 router = APIRouter(prefix="/posts", tags=["posts"])
 
 @router.get("/",response_model=List[schemas.CreatePost],)
-def get_post(limit:int =3, search: Optional[str] =''):
+def get_post(limit:int =10, search: Optional[str] =''):
     #main.cursor.execute("""SELECT * FROM posts LIMIT %s""",(str(limit),))
     main.cursor.execute('''SELECT * FROM posts WHERE title LIKE %s LIMIT %s  ''', ('%'+search+'%',str(limit),))
     posts =main.cursor.fetchall() #use wwhen retrive many posts
@@ -53,7 +53,7 @@ def get_post(id: int,response : Response): # Convert the id to int, if not, send
 def delete_post(id: int,user_id:int =Depends(oauth2.get_curent_user)):
     main.cursor.execute('''DELETE FROM posts WHERE id = %s RETURNING *''',(str(id),))
     deleted_post = main.cursor.fetchone()
-    print(user_id.id)
+    
     print(deleted_post['user_id'])
     if deleted_post ==None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Post with id: {id} doesnt exist")
